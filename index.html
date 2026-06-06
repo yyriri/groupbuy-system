@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>谷子拼团系统</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 40px;
+        }
+        #products {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .box {
+            width: 300px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+        .box img {
+            width: 100%;
+            height: 180px;
+            object-fit: contain;
+        }
+        input {
+            width: 100%;
+            margin: 8px 0;
+            padding: 8px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: green;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<button onclick="toggleLang()">🌐 切换语言</button>
+
+<div id="products"></div>
+
+<script>
+
+async function loadProduct() {
+
+    const res = await fetch("http://localhost:3000/products");
+    const products = await res.json();
+
+    const container = document.getElementById("products");
+
+    container.innerHTML = "";
+
+    products.forEach(product => {
+
+        container.innerHTML += `
+            <div class="box">
+
+                <img src="./images/product${product.id}.jpg" width="150">
+
+                <h2 data-original="${product.name}">
+                    ${product.name}
+                </h2>
+
+                <p data-original="库存：${product.stock}">
+                    库存：${product.stock}
+                </p>
+
+                <input
+                    id="name-${product.id}"
+                    placeholder="购买人姓名"
+                    data-original-placeholder="购买人姓名"
+                >
+
+                <input
+                    id="qty-${product.id}"
+                    type="number"
+                    placeholder="数量"
+                    data-original-placeholder="数量"
+                >
+
+                <button onclick="buy(${product.id})" data-original="购买(ID:${product.id})">
+                    购买(ID:${product.id})
+                </button>
+
+                <p id="msg-${product.id}"></p>
+
+            </div>
+        `;
+    });
+}
+
+async function buy(productId) {
+
+    console.log("购买商品ID:", productId);
+
+    const name =
+        document.getElementById(`name-${productId}`).value;
+
+    const qty =
+        document.getElementById(`qty-${productId}`).value;
+
+    console.log("购买数量:", qty);
+
+    const res = await fetch("http://localhost:3000/buy", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            buyer_name: name,
+            quantity: Number(qty),
+            product_id: productId
+        })
+    });
+
+    const data = await res.json();
+
+    document.getElementById(
+        `msg-${productId}`
+    ).innerText = data.message;
+
+
+    
+    await loadProduct();
+    if (isJapanese) {
+    toggleLang();
+    }
+    
+}
+let isJapanese = false;
+
+async function toggleLang() {
+
+    const elements = document.querySelectorAll("[data-original]");
+
+    const inputs = document.querySelectorAll("[data-original-placeholder]");
+
+    // ✔ 如果当前是中文 → 翻译
+    if (!isJapanese) {
+
+        for (let el of elements) {
+
+            const text = el.dataset.original;
+
+            const res = await fetch(
+                `https://api.mymemory.translated.net/get?q=${text}&langpair=zh|ja`
+            );
+
+            const data = await res.json();
+
+            if (data.responseData) {
+                el.innerText = data.responseData.translatedText;
+            }
+        }
+
+        for (let el of inputs) {
+
+            const text = el.dataset.originalPlaceholder;
+
+            const res = await fetch(
+                `https://api.mymemory.translated.net/get?q=${text}&langpair=zh|ja`
+            );
+
+            const data = await res.json();
+
+            if (data.responseData) {
+                el.placeholder = data.responseData.translatedText;
+            }
+        }
+
+    } else {
+
+        // ✔ 恢复中文
+        for (let el of elements) {
+            el.innerText = el.dataset.original;
+        }
+
+        for (let el of inputs) {
+            el.placeholder = el.dataset.originalPlaceholder;
+        }
+    }
+
+    // ✔ 状态反转
+    isJapanese = !isJapanese;
+}
+
+loadProduct();
+
+</script>
+
+</body>
+</html>
