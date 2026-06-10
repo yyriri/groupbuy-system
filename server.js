@@ -1,5 +1,5 @@
-console.log(" server.js 最新版本已启动");
-console.log("BUY API 已加载");
+console.log(" server.js started");
+console.log("BUY API loaded");
 const express = require("express");
 const cors = require("cors");
 const app = express();
