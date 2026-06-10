@@ -5,7 +5,11 @@ const cors = require("cors");
 const app = express();
 const pool = require("./db");
 
-app.use(cors());   // 👈 就是这里
+app.use(
+    cors({
+        origin: "http://127.0.0.1:5500"
+    })
+);// 👈 就是这里
 app.use(express.json());
 
 // 测试接口
